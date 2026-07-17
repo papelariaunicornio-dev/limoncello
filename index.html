@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Friday Night — Calculadora de Limoncello</title>
+<style>
+  :root {
+    --bg: #faf8f2;
+    --card: #ffffff;
+    --ink: #2b2a26;
+    --muted: #8a8578;
+    --accent: #b98e00;
+    --accent-soft: #fdf3d0;
+    --derived-bg: #f4f9f1;
+    --derived-ink: #3c6e2f;
+    --border: #e5e0d3;
+    --warn-bg: #fdecec;
+    --warn-ink: #a33030;
+    --recipe-bg: #2b2a26;
+    --recipe-ink: #f5efdd;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0 0 4rem;
+    font-family: "Segoe UI", system-ui, sans-serif;
+    background: var(--bg); color: var(--ink);
+  }
+  header {
+    background: linear-gradient(135deg, #f7e478, #e8c93e);
+    padding: 1.4rem 1rem 1.1rem;
+    text-align: center;
+  }
+  header h1 { margin: 0; font-size: 1.5rem; letter-spacing: .02em; }
+  header p { margin: .3rem 0 0; font-size: .85rem; color: #6b5d13; }
+  .tabs {
+    display: flex; justify-content: center; gap: .5rem;
+    margin: 1rem auto; max-width: 640px; padding: 0 1rem;
+  }
+  .tabs button {
+    flex: 1; padding: .65rem .5rem; font-size: .95rem; font-weight: 600;
+    border: 1px solid var(--border); border-radius: 10px;
+    background: var(--card); color: var(--muted); cursor: pointer;
+  }
+  .tabs button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  main { max-width: 640px; margin: 0 auto; padding: 0 1rem; }
+  details {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; margin-bottom: .8rem; overflow: hidden;
+  }
+  summary {
+    padding: .8rem 1rem; font-weight: 600; cursor: pointer;
+    user-select: none; list-style: none; display: flex; align-items: center; gap: .5rem;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "▸"; transition: transform .15s; color: var(--accent); }
+  details[open] summary::before { transform: rotate(90deg); }
+  .body { padding: 0 1rem 1rem; }
+  .row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: .75rem; padding: .32rem 0;
+  }
+  .row label { font-size: .88rem; flex: 1 1 55%; }
+  .row .unit { font-size: .75rem; color: var(--muted); margin-left: .25rem; }
+  .row input[type="text"], .row input[type="date"], .row select {
+    flex: 0 0 8.2rem; width: 8.2rem; padding: .42rem .55rem;
+    font-size: .95rem; text-align: right;
+    border: 1px solid var(--border); border-radius: 8px;
+    background: #fffdf7; color: var(--ink);
+  }
+  .row input[type="date"] { text-align: left; font-size: .85rem; }
+  .row select { text-align: left; }
+  .row input:focus, .row select:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+  .row.derived .value {
+    flex: 0 0 8.2rem; width: 8.2rem; padding: .42rem .55rem;
+    font-size: .95rem; text-align: right; font-weight: 600;
+    background: var(--derived-bg); color: var(--derived-ink);
+    border: 1px dashed #bcd8b0; border-radius: 8px;
+  }
+  .row.derived label { color: #4c663f; }
+  .hint { font-size: .74rem; color: var(--muted); margin: .1rem 0 .3rem; }
+  .warn {
+    background: var(--warn-bg); color: var(--warn-ink);
+    border-radius: 8px; padding: .6rem .8rem; font-size: .85rem; margin: .5rem 0;
+  }
+  .recipe {
+    background: var(--recipe-bg); color: var(--recipe-ink);
+    border-radius: 12px; padding: 1rem 1.2rem; margin: 1rem 0;
+    font-size: .95rem; line-height: 1.65;
+  }
+  .recipe h3 { margin: 0 0 .5rem; font-size: 1rem; color: #f0d868; }
+  .recipe b { color: #f0d868; }
+  .toolbar { display: flex; justify-content: flex-end; margin: .2rem 0 .8rem; }
+  .toolbar button {
+    background: none; border: 1px solid var(--border); border-radius: 8px;
+    padding: .4rem .8rem; font-size: .8rem; color: var(--muted); cursor: pointer;
+  }
+  .toolbar button:hover { color: var(--warn-ink); border-color: var(--warn-ink); }
+  .seg { display: flex; gap: .4rem; margin: .4rem 0 .6rem; }
+  .seg button {
+    flex: 1; padding: .5rem .4rem; font-size: .82rem; border-radius: 8px;
+    border: 1px solid var(--border); background: #fffdf7; color: var(--muted); cursor: pointer;
+  }
+  .seg button.active { background: var(--accent-soft); border-color: var(--accent); color: #6b5d13; font-weight: 600; }
+  table.spritz { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  table.spritz th { text-align: left; font-weight: 600; color: var(--muted); padding: .2rem .3rem; }
+  table.spritz td { padding: .2rem .3rem; }
+  table.spritz input {
+    width: 100%; padding: .35rem .45rem; font-size: .9rem; text-align: right;
+    border: 1px solid var(--border); border-radius: 6px; background: #fffdf7;
+  }
+  table.spritz input.nm { text-align: left; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🍋 Friday Night</h1>
+  <p>Calculadora de produção de limoncello</p>
+</header>
+
+<div class="tabs">
+  <button id="tabQuick" class="active" onclick="setTab('quick')">⚡ Receita rápida</button>
+  <button id="tabFull" onclick="setTab('full')">📋 Completa</button>
+</div>
+
+<main>
+
+<!-- ══════════════════ MODO RÁPIDO ══════════════════ -->
+<section id="quick">
+  <div class="toolbar"><button onclick="resetMode('q')">Limpar campos</button></div>
+
+  <details open>
+    <summary>Ponto de partida</summary>
+    <div class="body">
+      <div class="seg">
+        <button id="qDirInf" class="active" onclick="setQDir('inf')">Tenho a infusão medida</button>
+        <button id="qDirFinal" onclick="setQDir('final')">Quero um volume final</button>
+      </div>
+      <div class="row" id="qRowVinf"><label>Volume de infusão<span class="unit">L</span></label><input type="text" inputmode="decimal" id="q_v_inf" data-def="1"></div>
+      <div class="row" id="qRowVfinal"><label>Volume final desejado<span class="unit">L</span></label><input type="text" inputmode="decimal" id="q_v_final_in" data-def="3"></div>
+      <div class="row"><label>Teor alcoólico da infusão<span class="unit">%</span></label><input type="text" inputmode="decimal" id="q_abv_inf" data-def="88"></div>
+      <div class="row"><label>Teor alcoólico final desejado<span class="unit">%</span></label><input type="text" inputmode="decimal" id="q_abv_final" data-def="28"></div>
+      <div class="row"><label>Açúcar final desejado<span class="unit">g/L</span></label><input type="text" inputmode="decimal" id="q_acucar" data-def="150"></div>
+    </div>
+  </details>
+
+  <details open>
+    <summary>Forma do açúcar</summary>
+    <div class="body">
+      <div class="seg">
+        <button id="qModoInv" class="active" onclick="setQModo('invertido')">Açúcar invertido</button>
+        <button id="qModoXar" onclick="setQModo('xarope')">Xarope caseiro</button>
+      </div>
+      <div class="row" id="qRowPinv"><label>Sólidos de açúcar no invertido<span class="unit">%</span></label><input type="text" inputmode="decimal" id="q_p_inv" data-def="72"></div>
+      <div class="row hidden" id="qRowRazao"><label>Razão do xarope (açúcar : água)<span class="unit">×</span></label><input type="text" inputmode="decimal" id="q_razao" data-def="2"></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>Avançado</summary>
+    <div class="body">
+      <div class="row"><label>Densidade do açúcar dissolvido<span class="unit">g/L</span></label><input type="text" inputmode="decimal" id="q_dens_acucar" data-def="1587"></div>
+      <p class="hint">Volume aparente que o açúcar ocupa em solução (~0,63 mL/g de sacarose).</p>
+    </div>
+  </details>
+
+  <details open>
+    <summary>Cálculos</summary>
+    <div class="body" id="qCalc"></div>
+  </details>
+
+  <div id="qWarn"></div>
+  <div class="recipe" id="qRecipe"></div>
+</section>
+
+<!-- ══════════════════ MODO COMPLETO ══════════════════ -->
+<section id="full" class="hidden">
+  <div class="toolbar"><button onclick="resetMode('f')">Limpar campos</button></div>
+
+  <details open>
+    <summary>Pré-preparo</summary>
+    <div class="body">
+      <div class="row"><label>Data do pré-preparo</label><input type="date" id="f_data_pre"></div>
+      <div class="row"><label>Fruta</label><input type="text" id="f_fruta" data-def="Limão Siciliano" data-str="1"></div>
+      <div class="row"><label>Álcool adicionado à infusão<span class="unit">ml</span></label><input type="text" inputmode="decimal" id="f_alc_adic" data-def=""></div>
+      <div class="row"><label>Quantidade de fruta<span class="unit">un</span></label><input type="text" inputmode="decimal" id="f_qtd_fruta" data-def=""></div>
+      <div class="row"><label>Massa de casca<span class="unit">g</span></label><input type="text" inputmode="decimal" id="f_massa_casca" data-def=""></div>
+      <div class="row"><label>Massa total das frutas<span class="unit">g</span></label><input type="text" inputmode="decimal" id="f_massa_frutas" data-def=""></div>
+      <div class="row derived"><label>Massa por fruta<span class="unit">g</span></label><div class="value" id="o_massa_por_fruta">—</div></div>
+      <div class="row derived"><label>Casca por fruta<span class="unit">g</span></label><div class="value" id="o_casca_por_fruta">—</div></div>
+    </div>
+  </details>
+
+  <details open>
+    <summary>Produção</summary>
+    <div class="body">
+      <div class="row"><label>Data da produção</label><input type="date" id="f_data_prod"></div>
+      <div class="row"><label>Bebida</label><input type="text" id="f_bebida" data-def="Limoncello" data-str="1"></div>
+      <div class="row"><label>Ocasião</label><input type="text" id="f_ocasiao" data-def="" data-str="1" style="text-align:left"></div>
+      <div class="row derived"><label>Dias de infusão<span class="unit">dd</span></label><div class="value" id="o_dias_infusao">—</div></div>
+    </div>
+  </details>
+
+  <details open>
+    <summary>Parâmetros da bebida</summary>
+    <div class="body">
+      <div class="row"><label>Percentual alcoólico final<span class="unit">%</span></label><input type="text" inputmode="decimal" id="f_abv_final" data-def="28"></div>
+      <div class="row"><label>Massa de açúcar por litro de licor<span class="unit">g</span></label><input type="text" inputmode="decimal" id="f_acucar_gl" data-def="150"></div>
+      <div class="row"><label>Capacidade por garrafa<span class="unit">ml</span></label><input type="text" inputmode="decimal" id="f_cap_garrafa" data-def="500"></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>Parâmetros químicos</summary>
+    <div class="body">
+      <div class="row"><label>Densidade do açúcar invertido<span class="unit">g/ml</span></label><input type="text" inputmode="decimal" id="f_dens_inv" data-def="1,35"></div>
+      <div class="row derived"><label>Proporção sacarose no açúcar invertido<span class="unit">%</span></label><div class="value" id="o_prop_sacarose">—</div></div>
+      <div class="row"><label>Percentual do álcool de cereais<span class="unit">%</span></label><input type="text" inputmode="decimal" id="f_perc_cereais" data-def="96"></div>
+      <div class="row"><label>Percentual alcoólico da infusão<span class="unit">%</span></label><input type="text" inputmode="decimal" id="f_abv_inf" data-def="86,5"></div>
+      <div class="row"><label>Densidade do álcool puro<span class="unit">g/ml</span></label><input type="text" inputmode="decimal" id="f_dens_puro" data-def="0,789"></div>
+      <div class="row derived"><label>Densidade do álcool de cereais<span class="unit">g/ml</span></label><div class="value" id="o_dens_cereais">—</div></div>
+      <div class="row derived"><label>Densidade da infusão<span class="unit">g/ml</span></label><div class="value" id="o_dens_infusao">—</div></div>
+      <p class="hint">Proporção de sacarose = 5,4 ÷ (5 × densidade do invertido). Medir a densidade da infusão e do açúcar invertido quando possível.</p>
+    </div>
+  </details>
+
+  <details open>
+    <summary>Medidas base</summary>
+    <div class="body">
+      <div class="row"><label>Volume de álcool infusionado usado na receita<span class="unit">ml</span></label><input type="text" inputmode="decimal" id="f_v_inf" data-def="1000"></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>Cálculos auxiliares</summary>
+    <div class="body">
+      <div class="row derived"><label>Volume de álcool puro<span class="unit">ml</span></label><div class="value" id="o_v_alcool">—</div></div>
+      <div class="row derived"><label>Volume final de licor<span class="unit">ml</span></label><div class="value" id="o_v_final">—</div></div>
+      <div class="row derived"><label>Volume de açúcar invertido por litro<span class="unit">ml</span></label><div class="value" id="o_inv_por_litro">—</div></div>
+    </div>
+  </details>
+
+  <details open>
+    <summary>Medidas calculadas</summary>
+    <div class="body">
+      <div class="row derived"><label>Volume de água<span class="unit">ml</span></label><div class="value" id="o_v_agua">—</div></div>
+      <div class="row derived"><label>Volume de açúcar invertido<span class="unit">ml</span></label><div class="value" id="o_v_inv">—</div></div>
+      <div class="row derived"><label>Massa de açúcar invertido<span class="unit">g</span></label><div class="value" id="o_m_inv">—</div></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>Proporções finais</summary>
+    <div class="body">
+      <div class="row derived"><label>Água<span class="unit">%</span></label><div class="value" id="o_pct_agua">—</div></div>
+      <div class="row derived"><label>Álcool<span class="unit">%</span></label><div class="value" id="o_pct_alcool">—</div></div>
+      <div class="row derived"><label>Açúcar<span class="unit">%</span></label><div class="value" id="o_pct_acucar">—</div></div>
+      <div class="row derived"><label>Densidade estimada<span class="unit">g/ml</span></label><div class="value" id="o_densidade">—</div></div>
+      <div class="row derived"><label>Frutas por litro<span class="unit">un</span></label><div class="value" id="o_frutas_litro">—</div></div>
+      <div class="row derived"><label>Massa de frutas por litro<span class="unit">g</span></label><div class="value" id="o_massa_frutas_litro">—</div></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>Custos unitários</summary>
+    <div class="body">
+      <div class="row"><label>Álcool de cereais<span class="unit">R$/L</span></label><input type="text" inputmode="decimal" id="f_custo_alc" data-def="15,76"></div>
+      <div class="row"><label>Açúcar invertido<span class="unit">R$/kg</span></label><input type="text" inputmode="decimal" id="f_custo_inv" data-def="14"></div>
+      <div class="row"><label>Fruta<span class="unit">R$/kg</span></label><input type="text" inputmode="decimal" id="f_custo_fruta" data-def="18,99"></div>
+      <div class="row"><label>Água mineral<span class="unit">R$/L</span></label><input type="text" inputmode="decimal" id="f_custo_agua" data-def="1,99"></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>Custos finais</summary>
+    <div class="body">
+      <div class="row derived"><label>Fruta<span class="unit">R$</span></label><div class="value" id="o_cf_fruta">—</div></div>
+      <div class="row derived"><label>Álcool de cereais<span class="unit">R$</span></label><div class="value" id="o_cf_alcool">—</div></div>
+      <div class="row derived"><label>Açúcar invertido<span class="unit">R$</span></label><div class="value" id="o_cf_inv">—</div></div>
+      <div class="row derived"><label>Água mineral<span class="unit">R$</span></label><div class="value" id="o_cf_agua">—</div></div>
+      <p class="hint">Custo da fruta usa a massa total do pré-preparo. Custo do álcool usa o volume adicionado à infusão.</p>
+    </div>
+  </details>
+
+  <details open>
+    <summary>Totais</summary>
+    <div class="body">
+      <div class="row derived"><label>Produção<span class="unit">L</span></label><div class="value" id="o_producao">—</div></div>
+      <div class="row derived"><label>Garrafas produzidas<span class="unit">un</span></label><div class="value" id="o_garrafas">—</div></div>
+      <div class="row derived"><label>Custo total<span class="unit">R$</span></label><div class="value" id="o_custo_total">—</div></div>
+      <div class="row derived"><label>Custo por garrafa<span class="unit">R$</span></label><div class="value" id="o_custo_garrafa">—</div></div>
+      <div class="row derived"><label>Custo por litro<span class="unit">R$</span></label><div class="value" id="o_custo_litro">—</div></div>
+    </div>
+  </details>
+
+  <details>
+    <summary>Spritz — teor alcoólico da mistura</summary>
+    <div class="body">
+      <table class="spritz">
+        <tr><th>Bebida</th><th style="width:5.5rem">Teor (%)</th><th style="width:6rem">Proporção (ml)</th></tr>
+        <tr><td><input class="nm" type="text" id="s_n1" data-def="Espumante" data-str="1"></td>
+            <td><input type="text" inputmode="decimal" id="s_t1" data-def="11,5"></td>
+            <td><input type="text" inputmode="decimal" id="s_p1" data-def="500"></td></tr>
+        <tr><td><input class="nm" type="text" id="s_n2" data-def="Limoncello" data-str="1"></td>
+            <td><input type="text" inputmode="decimal" id="s_t2" data-def="28"></td>
+            <td><input type="text" inputmode="decimal" id="s_p2" data-def="500"></td></tr>
+        <tr><td><input class="nm" type="text" id="s_n3" data-def="Água com gás" data-str="1"></td>
+            <td><input type="text" inputmode="decimal" id="s_t3" data-def="0"></td>
+            <td><input type="text" inputmode="decimal" id="s_p3" data-def="500"></td></tr>
+      </table>
+      <div class="row derived" style="margin-top:.5rem"><label>Teor alcoólico final<span class="unit">%</span></label><div class="value" id="o_spritz">—</div></div>
+    </div>
+  </details>
+
+  <div id="fWarn"></div>
+  <div class="recipe" id="fRecipe"></div>
+</section>
+
+</main>
+
+<script>
+"use strict";
+const STORE_NAME = "friday-night-calc-v1";
+
+/* ---------- utilidades ---------- */
+function parseNum(str) {
+  if (str === null || str === undefined) return NaN;
+  str = String(str).trim();
+  if (str === "") return NaN;
+  return parseFloat(str.replace(/\./g, m => str.includes(",") ? "" : m).replace(",", "."));
+}
+function fmt(v, dec = 2) {
+  if (!isFinite(v)) return "—";
+  return v.toLocaleString("pt-BR", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+function val(id) { return parseNum(document.getElementById(id).value); }
+function setOut(id, v, dec = 2) { document.getElementById(id).textContent = fmt(v, dec); }
+function el(id) { return document.getElementById(id); }
+
+/* ---------- estado / persistência ---------- */
+let state = { tab: "quick", qDir: "inf", qModo: "invertido", fields: {} };
+try { state = Object.assign(state, JSON.parse(localStorage.getItem(STORE_NAME) || "{}")); } catch (e) {}
+
+function saveState() {
+  document.querySelectorAll("input").forEach(i => { state.fields[i.id] = i.value; });
+  localStorage.setItem(STORE_NAME, JSON.stringify(state));
+}
+
+function initFields() {
+  document.querySelectorAll("input").forEach(i => {
+    if (state.fields[i.id] !== undefined && state.fields[i.id] !== "") i.value = state.fields[i.id];
+    else if (i.dataset.def !== undefined) i.value = i.dataset.def;
+    i.addEventListener("input", () => { recalc(); saveState(); });
+  });
+}
+
+function resetMode(prefix) {
+  const sel = prefix === "q" ? "#quick input" : "#full input";
+  document.querySelectorAll(sel).forEach(i => { i.value = i.dataset.def !== undefined ? i.dataset.def : ""; });
+  recalc(); saveState();
+}
+
+/* ---------- abas e seletores ---------- */
+function setTab(t) {
+  state.tab = t;
+  el("quick").classList.toggle("hidden", t !== "quick");
+  el("full").classList.toggle("hidden", t !== "full");
+  el("tabQuick").classList.toggle("active", t === "quick");
+  el("tabFull").classList.toggle("active", t === "full");
+  saveState();
+}
+function setQDir(d) {
+  state.qDir = d;
+  el("qDirInf").classList.toggle("active", d === "inf");
+  el("qDirFinal").classList.toggle("active", d === "final");
+  el("qRowVinf").classList.toggle("hidden", d !== "inf");
+  el("qRowVfinal").classList.toggle("hidden", d !== "final");
+  recalc(); saveState();
+}
+function setQModo(m) {
+  state.qModo = m;
+  el("qModoInv").classList.toggle("active", m === "invertido");
+  el("qModoXar").classList.toggle("active", m === "xarope");
+  el("qRowPinv").classList.toggle("hidden", m !== "invertido");
+  el("qRowRazao").classList.toggle("hidden", m !== "xarope");
+  recalc(); saveState();
+}
+
+/* ---------- modo rápido ---------- */
+function recalcQuick() {
+  const abvInf = val("q_abv_inf") / 100;
+  const abvFinal = val("q_abv_final") / 100;
+  const acucar = val("q_acucar");
+  const densAcucar = val("q_dens_acucar");
+  const warns = [];
+
+  let vInf, vFinal;
+  if (state.qDir === "inf") {
+    vInf = val("q_v_inf");
+    vFinal = vInf * abvInf / abvFinal;
+  } else {
+    vFinal = val("q_v_final_in");
+    vInf = vFinal * abvFinal / abvInf;
+  }
+
+  if (isFinite(abvInf) && isFinite(abvFinal) && abvFinal >= abvInf)
+    warns.push("O teor final precisa ser menor que o teor da infusão — não dá pra concentrar diluindo.");
+  [["q_abv_inf", abvInf], ["q_abv_final", abvFinal], ["q_acucar", acucar]].forEach(([id, v]) => {
+    if (isFinite(v) && v <= 0) warns.push("Valores precisam ser positivos.");
+  });
+
+  const mAcucar = acucar * vFinal;
+  const vAcucar = mAcucar / densAcucar;
+  const vAguaTotal = vFinal - vInf - vAcucar;
+
+  const calcEl = el("qCalc");
+  let rows = [
+    ["Volume de infusão", vInf, "L", 3],
+    ["Volume final de licor", vFinal, "L", 3],
+    ["Massa total de açúcar", mAcucar, "g", 1],
+    ["Volume aparente do açúcar", vAcucar, "L", 3],
+    ["Água total a entrar", vAguaTotal, "L", 3],
+  ];
+
+  let recipe = "";
+  const fmtL = v => fmt(v, 2) + " L";
+  const fmtG = v => fmt(v, 0) + " g";
+
+  if (state.qModo === "invertido") {
+    const pInv = val("q_p_inv") / 100;
+    const mInv = mAcucar / pInv;
+    const aguaNoInv = (mInv - mAcucar) / 1000;
+    const vAguaDil = vAguaTotal - aguaNoInv;
+    rows.push(["Açúcar invertido a pesar", mInv, "g", 1]);
+    rows.push(["Água que já vem no invertido", aguaNoInv, "L", 3]);
+    rows.push(["Água de diluição", vAguaDil, "L", 3]);
+    if (isFinite(vAguaDil) && vAguaDil < 0)
+      warns.push("Água de diluição negativa: o açúcar invertido traz mais água do que o volume comporta. Reveja os alvos.");
+    recipe = `<h3>🍋 Receita de mistura</h3>
+      1. Pesar <b>${fmtG(mInv)}</b> de açúcar invertido.<br>
+      2. Adicionar <b>${fmtL(vAguaDil)}</b> de água de diluição.<br>
+      3. Misturar com <b>${fmtL(vInf)}</b> da infusão.<br><br>
+      Rende <b>${fmtL(vFinal)}</b> a <b>${fmt(abvFinal * 100, 0)}%</b> com <b>${fmt(acucar, 0)} g/L</b> de açúcar.`;
+  } else {
+    const razao = val("q_razao");
+    const mAguaXarope = mAcucar / razao;
+    const vAguaXarope = mAguaXarope / 1000;
+    const vAguaDil = vAguaTotal - vAguaXarope;
+    rows.push(["Água para o xarope", mAguaXarope, "g", 1]);
+    rows.push(["Água de diluição", vAguaDil, "L", 3]);
+    if (isFinite(vAguaDil) && vAguaDil < 0)
+      warns.push("Água de diluição negativa: o xarope traz mais água do que o volume comporta. Reveja os alvos.");
+    recipe = `<h3>🍋 Receita de mistura</h3>
+      1. Fazer o xarope: <b>${fmtG(mAcucar)}</b> de açúcar + <b>${fmtG(mAguaXarope)}</b> (mL) de água.<br>
+      2. Adicionar <b>${fmtL(vAguaDil)}</b> de água de diluição.<br>
+      3. Misturar com <b>${fmtL(vInf)}</b> da infusão.<br><br>
+      Rende <b>${fmtL(vFinal)}</b> a <b>${fmt(abvFinal * 100, 0)}%</b> com <b>${fmt(acucar, 0)} g/L</b> de açúcar.`;
+  }
+
+  calcEl.innerHTML = rows.map(([l, v, u, d]) =>
+    `<div class="row derived"><label>${l}<span class="unit">${u}</span></label><div class="value">${fmt(v, d)}</div></div>`).join("");
+  el("qWarn").innerHTML = [...new Set(warns)].map(w => `<div class="warn">⚠️ ${w}</div>`).join("");
+  el("qRecipe").innerHTML = isFinite(vFinal) ? recipe : "<h3>🍋 Receita de mistura</h3>Preencha os campos acima.";
+}
+
+/* ---------- modo completo (fórmulas da planilha) ---------- */
+function recalcFull() {
+  const warns = [];
+  // Pré-preparo
+  const qtdFruta = val("f_qtd_fruta");
+  const massaCasca = val("f_massa_casca");
+  const massaFrutas = val("f_massa_frutas");
+  const massaPorFruta = massaFrutas / qtdFruta;
+  setOut("o_massa_por_fruta", massaPorFruta, 1);
+  setOut("o_casca_por_fruta", massaCasca / qtdFruta, 1);
+
+  // Dias de infusão
+  const dp = el("f_data_pre").value, dP = el("f_data_prod").value;
+  if (dp && dP) {
+    const dias = (new Date(dP) - new Date(dp)) / 86400000;
+    el("o_dias_infusao").textContent = fmt(dias, 0);
+    if (dias < 0) warns.push("Data de produção anterior ao pré-preparo.");
+  } else el("o_dias_infusao").textContent = "—";
+
+  // Parâmetros
+  const abvFinal = val("f_abv_final") / 100;
+  const acucarGL = val("f_acucar_gl");
+  const capGarrafa = val("f_cap_garrafa");
+  const densInv = val("f_dens_inv");
+  const propSac = 5.4 / (5 * densInv);
+  const percCereais = val("f_perc_cereais") / 100;
+  const abvInf = val("f_abv_inf") / 100;
+  const densPuro = val("f_dens_puro");
+  setOut("o_prop_sacarose", propSac * 100, 1);
+  setOut("o_dens_cereais", densPuro / percCereais, 4);
+  setOut("o_dens_infusao", densPuro / abvInf, 4);
+
+  if (isFinite(abvInf) && isFinite(abvFinal) && abvFinal >= abvInf)
+    warns.push("O teor final precisa ser menor que o teor da infusão.");
+
+  // Medidas
+  const vInf = val("f_v_inf");
+  const vAlcool = vInf * abvInf;
+  const vFinal = vAlcool / abvFinal;
+  const invPorLitro = acucarGL / propSac / densInv;
+  const vInv = invPorLitro * vFinal / 1000;
+  const vAgua = vFinal - vInf - vInv;
+  const mInv = vInv * densInv;
+  setOut("o_v_alcool", vAlcool, 1);
+  setOut("o_v_final", vFinal, 1);
+  setOut("o_inv_por_litro", invPorLitro, 1);
+  setOut("o_v_agua", vAgua, 1);
+  setOut("o_v_inv", vInv, 1);
+  setOut("o_m_inv", mInv, 1);
+  if (isFinite(vAgua) && vAgua < 0)
+    warns.push("Volume de água negativo: o açúcar invertido traz mais volume do que cabe. Reveja os alvos.");
+
+  // Proporções
+  const pctAlcool = vAlcool / vFinal;
+  const pctAcucar = vInv / vFinal;
+  const pctAgua = 1 - pctAlcool - pctAcucar;
+  setOut("o_pct_agua", pctAgua * 100, 1);
+  setOut("o_pct_alcool", pctAlcool * 100, 1);
+  setOut("o_pct_acucar", pctAcucar * 100, 1);
+  setOut("o_densidade", pctAgua + pctAlcool * densPuro + pctAcucar * densInv, 4);
+  const frutasLitro = qtdFruta / (vFinal / 1000);
+  setOut("o_frutas_litro", frutasLitro, 2);
+  setOut("o_massa_frutas_litro", frutasLitro * massaPorFruta, 1);
+
+  // Custos
+  const alcAdic = val("f_alc_adic");
+  const cAlcL = val("f_custo_alc"), cInvKg = val("f_custo_inv"),
+        cFrutaKg = val("f_custo_fruta"), cAguaL = val("f_custo_agua");
+  const cfFruta = cFrutaKg * massaFrutas / 1000;
+  const cfAlcool = cAlcL * alcAdic / 1000;
+  const cfInv = cInvKg * mInv / 1000;
+  const cfAgua = cAguaL * vAgua / 1000;
+  setOut("o_cf_fruta", cfFruta, 2);
+  setOut("o_cf_alcool", cfAlcool, 2);
+  setOut("o_cf_inv", cfInv, 2);
+  setOut("o_cf_agua", cfAgua, 2);
+  const custoTotal = (isFinite(cfFruta) ? cfFruta : 0) + (isFinite(cfAlcool) ? cfAlcool : 0) +
+                     (isFinite(cfInv) ? cfInv : 0) + (isFinite(cfAgua) ? cfAgua : 0);
+
+  // Totais
+  const garrafas = vFinal / capGarrafa;
+  setOut("o_producao", vFinal / 1000, 3);
+  setOut("o_garrafas", garrafas, 2);
+  setOut("o_custo_total", isFinite(vFinal) ? custoTotal : NaN, 2);
+  setOut("o_custo_garrafa", custoTotal / garrafas, 2);
+  setOut("o_custo_litro", custoTotal / (vFinal / 1000), 2);
+
+  // Spritz
+  let sSum = 0, sVol = 0;
+  for (let i = 1; i <= 3; i++) {
+    const t = val("s_t" + i) / 100, p = val("s_p" + i);
+    if (isFinite(t) && isFinite(p)) { sSum += t * p; sVol += p; }
+  }
+  setOut("o_spritz", sVol > 0 ? (sSum / sVol) * 100 : NaN, 2);
+
+  el("fWarn").innerHTML = [...new Set(warns)].map(w => `<div class="warn">⚠️ ${w}</div>`).join("");
+  el("fRecipe").innerHTML = isFinite(vFinal)
+    ? `<h3>🍋 Receita de mistura do lote</h3>
+       1. Medir <b>${fmt(vInf, 0)} ml</b> da infusão (${fmt(abvInf * 100, 1)}%).<br>
+       2. Pesar <b>${fmt(mInv, 0)} g</b> de açúcar invertido (${fmt(vInv, 0)} ml).<br>
+       3. Adicionar <b>${fmt(vAgua, 0)} ml</b> de água.<br><br>
+       Rende <b>${fmt(vFinal / 1000, 2)} L</b> a <b>${fmt(abvFinal * 100, 0)}%</b> — ${fmt(garrafas, 1)} garrafa(s) de ${fmt(capGarrafa, 0)} ml.
+       ${isFinite(custoTotal) && custoTotal > 0 ? `Custo estimado: <b>R$ ${fmt(custoTotal, 2)}</b> (R$ ${fmt(custoTotal / (vFinal / 1000), 2)}/L).` : ""}`
+    : "<h3>🍋 Receita de mistura do lote</h3>Preencha o volume de infusão e os parâmetros.";
+}
+
+function recalc() { recalcQuick(); recalcFull(); }
+
+/* ---------- boot ---------- */
+initFields();
+setTab(state.tab);
+setQDir(state.qDir);
+setQModo(state.qModo);
+recalc();
+</script>
+</body>
+</html>
