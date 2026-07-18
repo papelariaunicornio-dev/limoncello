@@ -138,8 +138,8 @@
         <button id="qDirInf" class="active" onclick="setQDir('inf')">Tenho a infusão medida</button>
         <button id="qDirFinal" onclick="setQDir('final')">Quero um volume final</button>
       </div>
-      <div class="row" id="qRowVinf"><label>Volume de infusão<span class="unit">L</span></label><input type="text" inputmode="decimal" id="q_v_inf" data-def="1"></div>
-      <div class="row" id="qRowVfinal"><label>Volume final desejado<span class="unit">L</span></label><input type="text" inputmode="decimal" id="q_v_final_in" data-def="3"></div>
+      <div class="row" id="qRowVinf"><label>Volume de infusão<span class="unit">ml</span></label><input type="text" inputmode="decimal" id="q_v_inf" data-def="1000"></div>
+      <div class="row" id="qRowVfinal"><label>Volume final desejado<span class="unit">ml</span></label><input type="text" inputmode="decimal" id="q_v_final_in" data-def="3000"></div>
       <div class="row"><label>Teor alcoólico da infusão<span class="unit">%</span></label><input type="text" inputmode="decimal" id="q_abv_inf" data-def="88"></div>
       <div class="row"><label>Teor alcoólico final desejado<span class="unit">%</span></label><input type="text" inputmode="decimal" id="q_abv_final" data-def="28"></div>
       <div class="row"><label>Açúcar final desejado<span class="unit">g/L</span></label><input type="text" inputmode="decimal" id="q_acucar" data-def="150"></div>
@@ -161,8 +161,8 @@
   <details>
     <summary>Avançado</summary>
     <div class="body">
-      <div class="row"><label>Densidade do açúcar dissolvido<span class="unit">g/L</span></label><input type="text" inputmode="decimal" id="q_dens_acucar" data-def="1587"></div>
-      <p class="hint">Volume aparente que o açúcar ocupa em solução (~0,63 mL/g de sacarose).</p>
+      <div class="row"><label>Densidade do açúcar dissolvido<span class="unit">g/ml</span></label><input type="text" inputmode="decimal" id="q_dens_acucar" data-def="1,587"></div>
+      <p class="hint">Volume aparente que o açúcar ocupa em solução (~0,63 ml/g de sacarose).</p>
     </div>
   </details>
 
@@ -287,7 +287,7 @@
   <details open>
     <summary>Totais</summary>
     <div class="body">
-      <div class="row derived"><label>Produção<span class="unit">L</span></label><div class="value" id="o_producao">—</div></div>
+      <div class="row derived"><label>Produção<span class="unit">ml</span></label><div class="value" id="o_producao">—</div></div>
       <div class="row derived"><label>Garrafas produzidas<span class="unit">un</span></label><div class="value" id="o_garrafas">—</div></div>
       <div class="row derived"><label>Custo total<span class="unit">R$</span></label><div class="value" id="o_custo_total">—</div></div>
       <div class="row derived"><label>Custo por garrafa<span class="unit">R$</span></label><div class="value" id="o_custo_garrafa">—</div></div>
@@ -322,7 +322,7 @@
 
 <script>
 "use strict";
-const STORE_NAME = "friday-night-calc-v1";
+const STORE_NAME = "friday-night-calc-v2";
 
 /* ---------- utilidades ---------- */
 function parseNum(str) {
@@ -411,52 +411,51 @@ function recalcQuick() {
     if (isFinite(v) && v <= 0) warns.push("Valores precisam ser positivos.");
   });
 
-  const mAcucar = acucar * vFinal;
+  const mAcucar = acucar * vFinal / 1000;
   const vAcucar = mAcucar / densAcucar;
   const vAguaTotal = vFinal - vInf - vAcucar;
 
   const calcEl = el("qCalc");
   let rows = [
-    ["Volume de infusão", vInf, "L", 3],
-    ["Volume final de licor", vFinal, "L", 3],
+    ["Volume de infusão", vInf, "ml", 0],
+    ["Volume final de licor", vFinal, "ml", 0],
     ["Massa total de açúcar", mAcucar, "g", 1],
-    ["Volume aparente do açúcar", vAcucar, "L", 3],
-    ["Água total a entrar", vAguaTotal, "L", 3],
+    ["Volume aparente do açúcar", vAcucar, "ml", 0],
+    ["Água total a entrar", vAguaTotal, "ml", 0],
   ];
 
   let recipe = "";
-  const fmtL = v => fmt(v, 2) + " L";
+  const fmtMl = v => fmt(v, 0) + " ml";
   const fmtG = v => fmt(v, 0) + " g";
 
   if (state.qModo === "invertido") {
     const pInv = val("q_p_inv") / 100;
     const mInv = mAcucar / pInv;
-    const aguaNoInv = (mInv - mAcucar) / 1000;
+    const aguaNoInv = mInv - mAcucar;
     const vAguaDil = vAguaTotal - aguaNoInv;
     rows.push(["Açúcar invertido a pesar", mInv, "g", 1]);
-    rows.push(["Água que já vem no invertido", aguaNoInv, "L", 3]);
-    rows.push(["Água de diluição", vAguaDil, "L", 3]);
+    rows.push(["Água que já vem no invertido", aguaNoInv, "ml", 0]);
+    rows.push(["Água de diluição", vAguaDil, "ml", 0]);
     if (isFinite(vAguaDil) && vAguaDil < 0)
       warns.push("Água de diluição negativa: o açúcar invertido traz mais água do que o volume comporta. Reveja os alvos.");
     recipe = `<h3>🍋 Receita de mistura</h3>
       1. Pesar <b>${fmtG(mInv)}</b> de açúcar invertido.<br>
-      2. Adicionar <b>${fmtL(vAguaDil)}</b> de água de diluição.<br>
-      3. Misturar com <b>${fmtL(vInf)}</b> da infusão.<br><br>
-      Rende <b>${fmtL(vFinal)}</b> a <b>${fmt(abvFinal * 100, 0)}%</b> com <b>${fmt(acucar, 0)} g/L</b> de açúcar.`;
+      2. Adicionar <b>${fmtMl(vAguaDil)}</b> de água de diluição.<br>
+      3. Misturar com <b>${fmtMl(vInf)}</b> da infusão.<br><br>
+      Rende <b>${fmtMl(vFinal)}</b> a <b>${fmt(abvFinal * 100, 0)}%</b> com <b>${fmt(acucar, 0)} g/L</b> de açúcar.`;
   } else {
     const razao = val("q_razao");
     const mAguaXarope = mAcucar / razao;
-    const vAguaXarope = mAguaXarope / 1000;
-    const vAguaDil = vAguaTotal - vAguaXarope;
+    const vAguaDil = vAguaTotal - mAguaXarope;
     rows.push(["Água para o xarope", mAguaXarope, "g", 1]);
-    rows.push(["Água de diluição", vAguaDil, "L", 3]);
+    rows.push(["Água de diluição", vAguaDil, "ml", 0]);
     if (isFinite(vAguaDil) && vAguaDil < 0)
       warns.push("Água de diluição negativa: o xarope traz mais água do que o volume comporta. Reveja os alvos.");
     recipe = `<h3>🍋 Receita de mistura</h3>
-      1. Fazer o xarope: <b>${fmtG(mAcucar)}</b> de açúcar + <b>${fmtG(mAguaXarope)}</b> (mL) de água.<br>
-      2. Adicionar <b>${fmtL(vAguaDil)}</b> de água de diluição.<br>
-      3. Misturar com <b>${fmtL(vInf)}</b> da infusão.<br><br>
-      Rende <b>${fmtL(vFinal)}</b> a <b>${fmt(abvFinal * 100, 0)}%</b> com <b>${fmt(acucar, 0)} g/L</b> de açúcar.`;
+      1. Fazer o xarope: <b>${fmtG(mAcucar)}</b> de açúcar + <b>${fmtG(mAguaXarope)}</b> (ml) de água.<br>
+      2. Adicionar <b>${fmtMl(vAguaDil)}</b> de água de diluição.<br>
+      3. Misturar com <b>${fmtMl(vInf)}</b> da infusão.<br><br>
+      Rende <b>${fmtMl(vFinal)}</b> a <b>${fmt(abvFinal * 100, 0)}%</b> com <b>${fmt(acucar, 0)} g/L</b> de açúcar.`;
   }
 
   calcEl.innerHTML = rows.map(([l, v, u, d]) =>
@@ -546,7 +545,7 @@ function recalcFull() {
 
   // Totais
   const garrafas = vFinal / capGarrafa;
-  setOut("o_producao", vFinal / 1000, 3);
+  setOut("o_producao", vFinal, 0);
   setOut("o_garrafas", garrafas, 2);
   setOut("o_custo_total", isFinite(vFinal) ? custoTotal : NaN, 2);
   setOut("o_custo_garrafa", custoTotal / garrafas, 2);
@@ -566,7 +565,7 @@ function recalcFull() {
        1. Medir <b>${fmt(vInf, 0)} ml</b> da infusão (${fmt(abvInf * 100, 1)}%).<br>
        2. Pesar <b>${fmt(mInv, 0)} g</b> de açúcar invertido (${fmt(vInv, 0)} ml).<br>
        3. Adicionar <b>${fmt(vAgua, 0)} ml</b> de água.<br><br>
-       Rende <b>${fmt(vFinal / 1000, 2)} L</b> a <b>${fmt(abvFinal * 100, 0)}%</b> — ${fmt(garrafas, 1)} garrafa(s) de ${fmt(capGarrafa, 0)} ml.
+       Rende <b>${fmt(vFinal, 0)} ml</b> a <b>${fmt(abvFinal * 100, 0)}%</b> — ${fmt(garrafas, 1)} garrafa(s) de ${fmt(capGarrafa, 0)} ml.
        ${isFinite(custoTotal) && custoTotal > 0 ? `Custo estimado: <b>R$ ${fmt(custoTotal, 2)}</b> (R$ ${fmt(custoTotal / (vFinal / 1000), 2)}/L).` : ""}`
     : "<h3>🍋 Receita de mistura do lote</h3>Preencha o volume de infusão e os parâmetros.";
 }
